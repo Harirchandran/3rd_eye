@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Police Dashboard</title>
+  <!-- Font Awesome for spinner icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Supabase JS client -->
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    /* Basic styling for header, sections, tables, etc. */
+    header {
+      padding: 1em;
+      background: #444;
+      color: #fff;
+    }
+    nav button {
+      margin-right: 1em;
+      padding: 0.5em 1em;
+    }
+    section {
+      margin: 1em;
+      padding: 1em;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    table, th, td {
+      border: 1px solid #aaa;
+    }
+    th, td {
+      padding: 0.5em;
+      text-align: center;
+    }
+    img.thumbnail {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+    }
+    img.full {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      margin: 0.5em;
+    }
+    .hidden {
+      display: none;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .spinner {
+      animation: rotate 2s linear infinite;
+      width: 50px;
+      height: 50px;
+    }
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Global error and success messages */
+    .error-message {
+      color: #dc3545;
+      padding: 0.5em;
+      margin: 0.5em 0;
+      border: 1px solid #dc3545;
+      border-radius: 4px;
+      display: none;
+    }
+    .success-message {
+      color: #28a745;
+      padding: 0.5em;
+      margin: 0.5em 0;
+      border: 1px solid #28a745;
+      border-radius: 4px;
+      display: none;
+    }
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <i class="fas fa-spinner spinner"></i>
+  </div>
+  
+  <!-- Global error and success messages -->
+  <div id="globalError" class="error-message"></div>
+  <div id="globalSuccess" class="success-message"></div>
+  
+  <header>
+    <h1>Police Dashboard</h1>
+    <nav>
+      <button onclick="showSection('search')">Search Criminal</button>
+      <button onclick="showSection('add')">Add Criminal</button>
+      <button onclick="showSection('modify')">Modify Criminal</button>
+      <button onclick="logout()">Logout</button>
+    </nav>
+  </header>
+  <main>
+    <!-- Search Criminal Section -->
+    <section id="search-section">
+      <h2>Search Criminal</h2>
+      <form id="search-form">
+        <label for="search-field">Search By:</label>
+        <select id="search-field">
+          <option value="cid">CID</option>
+          <option value="name">Name</option>
+          <option value="aadhar">Aadhar</option>
+          <option value="phone">Phone</option>
+        </select>
+        <input type="text" id="search-input" placeholder="Enter search value" required>
+        <button type="submit">Search</button>
+      </form>
+      <div id="search-results" class="hidden">
+        <h3>Results</h3>
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th>CID</th>
+              <th>Name</th>
+              <th>Thumbnail</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <!-- Details Section (hidden until a result is chosen) -->
+      <div id="details-section" class="hidden">
+        <h3>Criminal Full Details</h3>
+        <div id="criminal-details"></div>
+        <div id="crime-details"></div>
+        <div id="log-details"></div>
+        <div id="photos-section"></div>
+        <button onclick="closeDetails()">Close Details</button>
+      </div>
+    </section>
+  
+    <!-- Add Criminal Section -->
+    <section id="add-section" class="hidden">
+      <h2>Add Criminal</h2>
+      <!-- First ask for CID -->
+      <form id="add-cid-form">
+        <label for="add-cid">Criminal ID:</label>
+        <input type="text" id="add-cid" required>
+        <button type="button" onclick="checkAddCriminal()">Check CID</button>
+      </form>
+      <!-- If CID is new, show full form -->
+      <div id="add-form-fields" class="hidden">
+        <form id="full-add-form">
+          <h3>Criminal Details</h3>
+          <label for="add-name">Name:</label>
+          <input type="text" id="add-name" required>
+          <label for="add-age">Age:</label>
+          <input type="number" id="add-age" required>
+          <label for="add-aadhar">Aadhar:</label>
+          <input type="text" id="add-aadhar" required>
+          <label for="add-phone">Phone:</label>
+          <input type="text" id="add-phone" required>
+          <label for="add-gender">Gender:</label>
+          <input type="text" id="add-gender" required>
+          <label for="add-address">Address:</label>
+          <input type="text" id="add-address" required>
+          <label for="add-reason">Reason for listing:</label>
+          <input type="text" id="add-reason" required >
+  
+          <h3>Crime Details</h3>
+          <label for="crime-title">Crime Title:</label>
+          <input type="text" id="crime-title" >
+          <label for="crime-detail">Crime Detail:</label>
+          <input type="text" id="crime-detail" >
+          <label for="crime-date">Crime Date:</label>
+          <input type="date" id="crime-date" >
+          <label for="crime-description">Crime Description:</label>
+          <textarea id="crime-description" ></textarea>
+  
+          <h3>Upload 5 Photos</h3>
+          <label for="photo1">Photo 1:</label>
+          <input type="file" id="photo1" accept="image/*" required>
+          <label for="photo2">Photo 2:</label>
+          <input type="file" id="photo2" accept="image/*" >
+          <label for="photo3">Photo 3:</label>
+          <input type="file" id="photo3" accept="image/*" >
+          <label for="photo4">Photo 4:</label>
+          <input type="file" id="photo4" accept="image/*" >
+          <label for="photo5">Photo 5:</label>
+          <input type="file" id="photo5" accept="image/*" >
+          <br>
+          <button type="submit">Save Criminal Record</button>
+        </form>
+      </div>
+    </section>
+  
+    <!-- Modify Criminal Section -->
+    <section id="modify-section" class="hidden">
+      <h2>Modify Criminal Details</h2>
+      <!-- Enter CID to load details -->
+      <form id="modify-cid-form">
+        <label for="modify-cid">Enter Criminal ID:</label>
+        <input type="text" id="modify-cid" required>
+        <button type="button" onclick="loadCriminalForModify()">Load Details</button>
+      </form>
+      <div id="modify-form-fields" class="hidden">
+        <form id="modify-criminal-form">
+          <h3>Criminal Details</h3>
+          <label for="mod-cid">Criminal ID:</label>
+          <input type="text" id="mod-cid" readonly>
+          <label for="mod-name">Name:</label>
+          <input type="text" id="mod-name" required>
+          <label for="mod-age">Age:</label>
+          <input type="number" id="mod-age" required>
+          <label for="mod-aadhar">Aadhar:</label>
+          <input type="text" id="mod-aadhar" required>
+          <label for="mod-phone">Phone:</label>
+          <input type="text" id="mod-phone" required>
+          <label for="mod-gender">Gender:</label>
+          <input type="text" id="mod-gender" required>
+          <label for="mod-address">Address:</label>
+          <input type="text" id="mod-address" required>
+          <label for="mod-reason">Reason for listing:</label>
+          <input type="text" id="mod-reason" required>
+  
+          <h3>Crime Details</h3>
+          <label for="mod-crime-title">Crime Title:</label>
+          <input type="text" id="mod-crime-title" >
+          <label for="mod-crime-detail">Crime Detail:</label>
+          <input type="text" id="mod-crime-detail" >
+          <label for="mod-crime-date">Crime Date:</label>
+          <input type="date" id="mod-crime-date" >
+          <label for="mod-crime-description">Crime Description:</label>
+          <textarea id="mod-crime-description" ></textarea>
+  
+          <h3>Photos</h3>
+          <div id="modify-photos">
+            <!-- Existing photos will be shown here with an option to replace -->
+          </div>
+          <br>
+          <button type="submit">Update Criminal Record</button>
+        </form>
+      </div>
+    </section>
+  </main>
+  <script src="police.js"></script>
+</body>
+</html>

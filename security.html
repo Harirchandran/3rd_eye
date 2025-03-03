@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security Dashboard - 3rd EYE</title>
+  <!-- Include Supabase JS Client and Font Awesome for spinner icons -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+/* General Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Header and Navigation */
+header {
+  background: #004080;
+  color: white;
+  padding: 1em;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+header h1 {
+  font-size: 1.6em;
+  margin-bottom: 0.5em;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+nav button {
+  padding: 0.6em 1em;
+  font-size: 1em;
+  border: none;
+  background: #0055aa;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+nav button:hover {
+  background: #003366;
+}
+
+/* Main Content */
+main {
+  padding: 1em;
+  max-width: 1200px;
+  margin: auto;
+}
+
+section {
+  background: #fff;
+  padding: 1.2em;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2em;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Tables */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 0.8em;
+  text-align: left;
+  font-size: 0.9em;
+}
+
+th {
+  background: #004080;
+  color: white;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1em;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.3em;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* Buttons */
+button {
+  padding: 0.8em;
+  background: #004080;
+  color: white;
+  font-size: 1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+
+button:hover {
+  background: #003366;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.spinner {
+  border: 5px solid #ddd;
+  border-top: 5px solid #004080;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Messages */
+.message {
+  padding: 1em;
+  margin-top: 1em;
+  border-radius: 6px;
+  text-align: center;
+  display: none;
+}
+
+.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Thumbnails */
+.thumbnail {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* Pagination */
+.paging-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1em;
+}
+
+/* Modal */
+#detailsModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+#detailsModal > div {
+  background: white;
+  padding: 1.5em;
+  max-height: 90%;
+  overflow-y: auto;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+}
+
+/* Alert Overlay */
+#alertOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.alert-box {
+  background: #e74c3c;
+  color: white;
+  padding: 1.2em;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1em;
+}
+
+.alert-box button {
+  margin-top: 15px;
+  background: #fff;
+  color: #e74c3c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Settings Bar */
+#settingsBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-top: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 4000;
+}
+
+#settingsBar label {
+  font-size: 0.9em;
+}
+
+/* Dark Mode */
+body.dark-mode {
+  background-color: #222;
+  color: #ddd;
+}
+
+body.dark-mode header {
+  background-color: #000;
+  color: #fff;
+}
+
+body.dark-mode main, 
+body.dark-mode section {
+  background: #333;
+  color: #ddd;
+}
+
+body.dark-mode input, 
+body.dark-mode select {
+  background: #444;
+  color: #ddd;
+  border: 1px solid #666;
+}
+
+body.dark-mode .loading-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  header h1 {
+    font-size: 1.4em;
+  }
+
+  nav {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  nav button {
+    font-size: 0.9em;
+    padding: 0.5em;
+  }
+
+  main, section {
+    padding: 1em;
+    margin: 0.5em;
+  }
+
+  table, th, td {
+    font-size: 0.85em;
+    padding: 0.6em;
+  }
+
+  .thumbnail {
+    width: 60px;
+    height: 60px;
+  }
+
+  button {
+    font-size: 0.9em;
+    padding: 0.6em;
+  }
+
+  .alert-box {
+    width: 90%;
+    font-size: 0.9em;
+  }
+
+  #settingsBar {
+    flex-direction: raw;
+    padding: 8px;
+    
+  }
+}
+
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+  <!-- Global Message Container -->
+  <div id="globalMessage" class="message"></div>
+  
+  <header>
+    <h1>Security Dashboard - 3rd EYE</h1>
+    <nav>
+      <button onclick="showSection('viewLogs')">View Realtime Detection Logs</button>
+      <button onclick="showSection('searchCriminal')">Search Criminal</button>
+      <button onclick="logout()">Logout</button>
+    </nav>
+  </header>
+  
+  <main>
+    <!-- Realtime Detection Logs Section -->
+    <section id="viewLogs">
+      <h2>Realtime Detection Logs</h2>
+      <table id="logsTable">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>CID</th>
+            <th>Name</th>
+            <th>Thumbnail</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="paging-buttons">
+        <button onclick="prevPage()">Previous</button>
+        <button onclick="nextPage()">Next</button>
+      </div>
+    </section>
+    
+    <!-- Search Criminal Section -->
+    <section id="searchCriminal" class="hidden">
+      <h2>Search Criminal</h2>
+      <form id="searchCriminalForm">
+        <div class="form-group">
+          <label for="criminalSearchField">Search By:</label>
+          <select id="criminalSearchField">
+            <option value="cid">CID</option>
+            <option value="name">Name</option>
+            <option value="aadhar">Aadhar</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="criminalSearchInput">Search Value:</label>
+          <input type="text" id="criminalSearchInput" required>
+        </div>
+        <button type="submit">Search</button>
+      </form>
+      <div id="criminalResults" style="margin-top:1em;">
+        <table id="criminalTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  
+  <!-- Modal for Full Criminal Details -->
+  <div id="detailsModal">
+    <!-- Content is injected dynamically -->
+  </div>
+  
+  <!-- Alert Overlay for Detection -->
+  <div id="alertOverlay">
+    <div class="alert-box">
+      <p id="alertMessage">Warning: New detection alert!</p>
+      <button id="alertOk">OK</button>
+    </div>
+  </div>
+  
+  <!-- Settings Bar at Bottom -->
+  <div id="settingsBar">
+    <label>
+      <input type="checkbox" id="toggleNotifications" checked>
+      System Notifications
+    </label>
+    <label>
+      <input type="checkbox" id="toggleRedAlert" checked>
+      Red Alert
+    </label>
+    
+  </div>
+  
+  <script src="security.js">
+    // Supabase credentials and client initialization
+   
+  </script>
+</body>
+</html>

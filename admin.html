@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - 3rd EYE</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Include Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    /* Basic Styles */
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header { background-color: #333; color: white; padding: 1em; }
+    header h1 { display: inline-block; margin: 0; }
+    nav { display: inline-block; margin-left: 2em; }
+    nav button { margin-right: 1em; padding: 0.5em 1em; }
+    main { padding: 1em; }
+    section { display: none; margin-bottom: 2em; }
+    section.active { display: block; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 0.5em; text-align: left; }
+    .form-group { margin-bottom: 1em; }
+    label { display: block; margin-bottom: 0.5em; }
+    input, select { width: 100%; padding: 0.5em; }
+    
+    /* Loading Overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #333;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Global Messages */
+    .message {
+      padding: 0.5em;
+      margin: 0.5em 0;
+      border-radius: 4px;
+      display: none;
+    }
+    .error { background-color: #f8d7da; color: #721c24; }
+    .success { background-color: #d4edda; color: #155724; }
+    
+    /* Thumbnail style */
+    .thumbnail { width: 80px; height: 80px; object-fit: cover; }
+    
+    /* Criminal Details Section */
+    #criminalDetails {
+      border: 1px solid #ccc;
+      padding: 1em;
+      margin-top: 1em;
+    }
+    #criminalDetails.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+  <!-- Global Message Container -->
+  <div id="globalMessage" class="message"></div>
+  <header>
+    <h1>Admin Dashboard - 3rd EYE</h1>
+    <nav>
+      <button onclick="showSection('manageUsers')">Manage Users</button>
+      <button onclick="showSection('searchCriminals')">Search Criminals</button>
+      <button onclick="showSection('userLogs')">User Logs</button>
+      <button onclick="showSection('criminalLogs')">Criminal Logs</button>
+      <button onclick="logout()">Logout</button>
+    </nav>
+  </header>
+  <main>
+    <!-- Manage Users Section -->
+    <section id="manageUsers" class="active">
+      <h2>Manage Users</h2>
+      <div id="usersTableContainer">
+        <table id="usersTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <h3>Add New User</h3>
+      <form id="addUserForm">
+        <div class="form-group">
+          <label for="newUserID">User ID:</label>
+          <input type="text" id="newUserID" required>
+        </div>
+        <div class="form-group">
+          <label for="newUserPassword">Password:</label>
+          <input type="password" id="newUserPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="newUserType">User Type:</label>
+          <select id="newUserType" required>
+            <option value="admin">Admin</option>
+            <option value="police">Police</option>
+            <option value="security">Security</option>
+          </select>
+        </div>
+        <button type="submit">Add User</button>
+      </form>
+    </section>
+    
+    <!-- Search Criminals Section (View Only) -->
+    <section id="searchCriminals">
+      <h2>Search Criminals</h2>
+      <form id="searchCriminalForm">
+        <div class="form-group">
+          <label for="criminalSearchField">Search By:</label>
+          <select id="criminalSearchField">
+            <option value="cid">CID</option>
+            <option value="name">Name</option>
+            <option value="aadhar">Aadhar</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="criminalSearchInput">Search Value:</label>
+          <input type="text" id="criminalSearchInput" required>
+        </div>
+        <button type="submit">Search</button>
+      </form>
+      <div id="criminalResults" style="margin-top:1em;">
+        <table id="criminalTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <!-- Criminal Full Details Section -->
+      <div id="criminalDetails" class="hidden">
+        <h3>Criminal Full Details</h3>
+        <div id="criminalInfo"></div>
+        <div id="crimeInfo"></div>
+        <div id="criminalPhotos"></div>
+        <button onclick="closeCriminalDetails()">Close Details</button>
+      </div>
+    </section>
+    
+    <!-- User Logs Section -->
+    <section id="userLogs">
+      <h2>User Logs</h2>
+      <div id="userLogsContainer">
+        <table id="userLogsTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    
+    <!-- Criminal Logs Section -->
+    <section id="criminalLogs">
+      <h2>Criminal Logs</h2>
+      <div id="criminalLogsContainer">
+        <table id="criminalLogsTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>
